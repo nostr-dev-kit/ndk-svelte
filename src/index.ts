@@ -83,7 +83,7 @@ class NDKSvelte extends NDK {
         return store;
     }
 
-    storeSubscribe<T>(
+    public storeSubscribe<T>(
         filters: NDKFilter | NDKFilter[],
         opts?: NDKSubscriptionOptions,
         klass?: ClassWithConvertFunction<T>
