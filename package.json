@@ -24,7 +24,7 @@
     "svelte"
   ],
   "author": "pablof7z",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@nostr-dev-kit/ndk": "^0.8.10",
     "svelte": "^4.1.2",
