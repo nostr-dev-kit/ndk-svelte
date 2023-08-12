@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@nostr-dev-kit/ndk':
-    specifier: ^0.8.12
-    version: 0.8.12(typescript@5.1.6)
+    specifier: ^0.8.13
+    version: 0.8.13(typescript@5.1.6)
   svelte:
     specifier: ^4.1.2
     version: 4.1.2
@@ -575,8 +575,8 @@ packages:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.15.0
 
-  /@nostr-dev-kit/ndk@0.8.12(typescript@5.1.6):
-    resolution: {integrity: sha512-AGZskoRz6T8hiHlbmWemRmBp6SbXK904FCD9GOgcR3cSEX0M6sM2iiW577QssrJV+HavlwJh8wt1fDsyqm3LkQ==}
+  /@nostr-dev-kit/ndk@0.8.13(typescript@5.1.6):
+    resolution: {integrity: sha512-WDDx0B3eRJWiqKbkMKTxqNPWTDShTt7IfMbZblas700Hm5DvoFb6E5jXyE4/szLM2gFf785gBXfp+rdLUfIktw==}
     dependencies:
       '@noble/hashes': 1.3.1
       '@noble/secp256k1': 2.0.0
