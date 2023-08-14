@@ -1,8 +1,8 @@
 import { writable, type Unsubscriber, type Writable } from 'svelte/store';
 import NDK, { NDKConstructorParams, NDKEvent, NDKFilter, NDKSubscriptionOptions, NDKRepost } from "@nostr-dev-kit/ndk";
 
-type ClassWithConvertFunction<T> = {
-    from: (event: NDKEvent) => NDKEvent;
+type ClassWithConvertFunction<T extends NDKEvent> = {
+    from: (event: NDKEvent) => T;
 };
 
 type UnsubscribableStore<T> = Writable<T> & {
@@ -28,7 +28,7 @@ class NDKSvelte extends NDK {
         };
     }
 
-    private handleEvent<T>(event: NDKEvent, eventIds: Set<string>, events: T[], store: UnsubscribableStore<T[]>, klass?: ClassWithConvertFunction<T>) {
+    private handleEvent<T extends NDKEvent>(event: NDKEvent, eventIds: Set<string>, events: T[], store: UnsubscribableStore<T[]>, klass?: ClassWithConvertFunction<T>) {
         let e: NDKEvent | T = event;
         if (klass) {
             e = klass.from(event);
@@ -38,11 +38,18 @@ class NDKSvelte extends NDK {
         const id = event.tagId();
         if (eventIds.has(id)) return;
         eventIds.add(id);
-        events.push(e as unknown as T);
+
+        const index = events.findIndex((e) => e.created_at! < event.created_at!);
+        if (index === -1) {
+            events.push(e as unknown as T);
+        } else {
+            events.splice(index === -1 ? events.length : index, 0, e as unknown as T);
+        }
+
         store.set(events);
     }
 
-    public storeSubscribeWithReposts<T>(
+    public storeSubscribeWithReposts<T extends NDKEvent>(
         filters: NDKFilter | NDKFilter[],
         repostsFilter: NDKFilter,
         opts?: NDKSubscriptionOptions,
@@ -83,7 +90,7 @@ class NDKSvelte extends NDK {
         return store;
     }
 
-    public storeSubscribe<T>(
+    public storeSubscribe<T extends NDKEvent>(
         filters: NDKFilter | NDKFilter[],
         opts?: NDKSubscriptionOptions,
         klass?: ClassWithConvertFunction<T>

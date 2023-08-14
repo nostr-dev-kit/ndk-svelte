@@ -2,10 +2,18 @@
 
 This package provides convenience functionalities to make usage of NDK with Svelte nicer.
 
+## Install
+
+```
+pnpm add @nostr-dev-kit/ndk-svelte
+```
+
 ## Store subscriptions
 
 NDK-svelte provides Svelte Store subscriptions so your components can have simple reactivity
 when events arrive.
+
+Events in the store will appear in a set ordered by `created_at`.
 
 ```typescript
 import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
