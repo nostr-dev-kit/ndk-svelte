@@ -15,11 +15,14 @@ type ExtendedBaseType<T extends NDKEvent> = T & {
 export type NDKEventStore<T extends NDKEvent> = Writable<ExtendedBaseType<T>[]> & {
     filters: NDKFilter[] | undefined;
     refCount: number;
+    subscription: NDKSubscription | undefined;
     startSubscription: () => void;
     unsubscribe: Unsubscriber;
     onEose: (cb: () => void) => void;
     ref: () => number;
     unref: () => number;
+    empty: () => void;
+    changeFilters: (filters: NDKFilter[]) => void;
 };
 
 type NDKSubscribeOptions = NDKSubscriptionOptions & {
@@ -33,6 +36,11 @@ type NDKSubscribeOptions = NDKSubscriptionOptions & {
      * Reposts filters
      */
     repostsFilters?: NDKFilter[];
+
+    /**
+     * Wait this amount of ms before unsubscribing when there are zero refs.
+     */
+    unrefUnsubscribeTimeout?: number;
 };
 
 class NDKSvelte extends NDK {
@@ -47,25 +55,17 @@ class NDKSvelte extends NDK {
         return {
             refCount: 0,
             filters,
+            subscription: undefined,
             set: store.set,
             update: store.update,
             subscribe: store.subscribe,
             unsubscribe: () => {},
             onEose: (cb) => {},
             startSubscription: () => { throw new Error('not implemented') },
-            ref: () => {
-                store.refCount++;
-                if (store.refCount === 1) {
-                    store.startSubscription();
-                }
-                return store.refCount;
-            },
-            unref: () => {
-                if (--store.refCount === 0) {
-                    store.unsubscribe();
-                }
-                return store.refCount;
-            }
+            ref: () => { throw new Error('not implemented') },
+            unref: () => { throw new Error('not implemented') },
+            empty: () => { throw new Error('not implemented') },
+            changeFilters: (filters: NDKFilter[]) => { throw new Error('not implemented') }
         };
     }
 
@@ -81,7 +81,6 @@ class NDKSvelte extends NDK {
         opts?: NDKSubscribeOptions,
         klass?: ClassWithConvertFunction<T>
     ): NDKEventStore<ExtendedBaseType<T>> {
-        let sub: NDKSubscription | undefined = undefined;
         const eventIds: Set<string> = new Set();
         const events: ExtendedBaseType<T>[] = [];
         const store = this.createEventStore<ExtendedBaseType<T>>(
@@ -163,6 +162,61 @@ class NDKSvelte extends NDK {
             store.set(events);
         };
 
+        /**
+         * Increments the ref count and starts the subscription if it's the first
+         */
+        store.ref = () => {
+            store.refCount++;
+            if (store.refCount === 1) {
+                store.startSubscription();
+            }
+            return store.refCount;
+        };
+
+        /**
+         * Decrements the ref count and unsubscribes if it's the last
+         */
+        store.unref = () => {
+            if (--store.refCount !== 0)
+                return store.refCount;
+
+            if (opts?.unrefUnsubscribeTimeout) {
+                setTimeout(() => {
+                    if (store.refCount === 0) {
+                        store.unsubscribe();
+                    }
+                }
+                , opts.unrefUnsubscribeTimeout!);
+            } else {
+                store.unsubscribe();
+            }
+
+            return store.refCount;
+        };
+
+        /**
+         * Empties the store and unsubscribes from the relays
+         */
+        store.empty = () => {
+            store.set([]);
+            store.unsubscribe();
+        };
+
+        /**
+         * Changes the filters and empties the store
+         */
+        store.changeFilters = (filters: NDKFilter[]) => {
+            store.filters = filters;
+            store.empty();
+
+            // only start the subscription if we have a ref
+            if (store.refCount > 0)
+                store.startSubscription();
+        };
+
+        /**
+         * Starts the subscription on the relays
+         */
         store.startSubscription = () => {
             if (!store.filters) {
                 throw new Error('no filters');
@@ -174,19 +228,19 @@ class NDKSvelte extends NDK {
                 filters.push(...opts.repostsFilters);
             }
 
-            sub = this.subscribe(filters, opts);
+            store.subscription = this.subscribe(filters, opts);
 
-            sub.on('event', (event: NDKEvent) => {
+            store.subscription.on('event', (event: NDKEvent) => {
                 handleEvent(event);
             });
 
             store.unsubscribe = () => {
-                sub?.stop();
-                sub = undefined;
+                store.subscription?.stop();
+                store.subscription = undefined;
             };
 
             store.onEose = (cb) => {
-                sub?.on('eose', cb);
+                store.subscription?.on('eose', cb);
             };
         }
 
