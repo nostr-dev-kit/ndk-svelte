@@ -16,11 +16,13 @@ when events arrive.
 Events in the store will appear in a set ordered by `created_at`.
 
 ```typescript
+import { writable } from 'svelte/store';
 import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 
-const ndk = new NDKSvelte({
+const _ndk = new NDKSvelte({
     explicitRelayUrls: ['wss://relay.f7z.io'],
 });
+export const ndk = writable(_ndk);
 ```
 
 ```typescript
