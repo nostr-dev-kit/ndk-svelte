@@ -18,7 +18,7 @@ Events in the store will appear in a set ordered by `created_at`.
 ```typescript
 import NDKSvelte from '@nostr-dev-kit/ndk-svelte';
 
-const export ndk = new NDKSvelte({
+export const ndk = new NDKSvelte({
     explicitRelayUrls: ['wss://relay.f7z.io'],
 });
 ```
